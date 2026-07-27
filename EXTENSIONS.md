@@ -1,13 +1,16 @@
-# Passport browser builds
+# Passport — download builds
 
-Two **separate** downloads — do not mix folders.
+Two **separate** zip files. Download the one for your browser; do not merge the folders.
 
-| File / folder | Browser | Install |
-|---------------|---------|---------|
-| `passport-extension.zip` | **Chrome** (also Edge/Brave) | Unzip → Load unpacked → select the inner `extension/` folder |
-| `safari-extension.zip` | **Safari** | Unzip → convert on a Mac (see `safari/README.md`) |
-| `chrome-extension/` | Chrome source (same as the zip) | Load unpacked as-is |
-| `safari/extension/` | Safari source (same as the safari zip) | Convert with `safari-web-extension-converter` |
-| `mac/` | Mac menu-bar app | System proxy for Safari IP routing |
+| Download | Browser | After download |
+|----------|---------|----------------|
+| [`chrome-extension.zip`](./chrome-extension.zip) | Chrome / Edge / Brave | Unzip → Load unpacked → select the `extension/` folder |
+| [`safari-extension.zip`](./safari-extension.zip) | Safari (Mac) | Unzip → convert with Xcode (see [`safari/README.md`](./safari/README.md)) |
 
-Chrome keeps PAC proxy. Safari does not — use `mac/` for geo routing.
+Also available (same Chrome package, older filename):
+
+| Download | Notes |
+|----------|--------|
+| [`passport-extension.zip`](./passport-extension.zip) | Same Chrome build as `chrome-extension.zip` |
+
+Source trees (not required for install): `chrome-extension/`, `safari/extension/`, optional `mac/` for Safari IP routing.
