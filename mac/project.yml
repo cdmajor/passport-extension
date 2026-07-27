@@ -1,0 +1,30 @@
+name: Passport
+options:
+  bundleIdPrefix: com.passport
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    PRODUCT_NAME: Passport
+targets:
+  Passport:
+    type: application
+    platform: macOS
+    sources:
+      - path: Passport
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.passport.app
+        INFOPLIST_FILE: Passport/Info.plist
+        GENERATE_INFOPLIST_FILE: false
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        CODE_SIGN_ENTITLEMENTS: Passport/Passport.entitlements
+        ENABLE_HARDENED_RUNTIME: true
+        COMBINE_HIDPI_IMAGES: true
+    entitlements:
+      path: Passport/Passport.entitlements

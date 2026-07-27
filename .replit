@@ -1,0 +1,38 @@
+modules = ["nodejs-24", "postgresql-16"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+run = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+
+[deployment.build]
+args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+env = { "NODE_ENV" = "production" }
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+WHOP_COMPANY_ID = "biz_vKCFtvZlUoKYyW"
+WHOP_PRODUCT_ID = "prod_BWZZpCCjntFOl"
+WHOP_PLAN_ID = "plan_5RSwKy5Jhdat4"
+WHOP_PLAN_EXPLORER = "plan_yWK8tkAhYFFHf"
+WHOP_PLAN_LITE = "plan_sCvQDQK8tMuGz"
+WHOP_PLAN_PRO = "plan_b38qgRyEYt5Da"
+
+[nix]
+channel = "stable-25_05"
