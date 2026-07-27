@@ -23,3 +23,10 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+WHOP_COMPANY_ID = "biz_vKCFtvZlUoKYyW"
+WHOP_PRODUCT_ID = "prod_BWZZpCCjntFOl"
+WHOP_PLAN_ID = "plan_5RSwKy5Jhdat4"
