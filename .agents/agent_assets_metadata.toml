@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "YGx-PfQ3ivTZ05zp3X1VN"
+uri = "file://passport-extension.zip"
+type = "unspecified"
+title = "Passport Extension"
