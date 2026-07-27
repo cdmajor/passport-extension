@@ -105,7 +105,7 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
   }
 
   try {
-    const config = getProxyForCountry(code);
+    const config = await getProxyForCountry(code);
     res.json({ ...config, usage });
   } catch (err) {
     req.log.error(err, "Smartproxy fetch error");
