@@ -80,9 +80,11 @@ module.exports = {
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/` or `/api/health` | Health check + feature flags (proxy / translation provider) |
 | GET | `/api/proxy/countries` | Returns list of available countries with names + codes |
 | GET | `/api/proxy/config/:countryCode` | Returns proxy host/port for the given country (served over HTTPS only) |
-| POST | `/api/translate` | Translates page text (GPT-4o-mini) |
+| POST | `/api/translate` | Translates page text (OpenAI if keyed, otherwise free MyMemory) |
+| POST | `/api/detect` | Detects sample language (same provider fallback) |
 
 The extension fetches `/api/proxy/config/:countryCode` and uses the returned host/port to build its PAC script. Credentials are never stored in the extension itself — they are resolved server-side and injected into the PAC script response.
 
@@ -93,16 +95,21 @@ The extension fetches `/api/proxy/config/:countryCode` and uses the returned hos
 ```bash
 cd server
 npm install
-cp .env.example .env   # fill in proxy credentials + OpenAI key
+cp .env.example .env   # fill in proxy hosts; OpenAI key is optional
 npm run dev
 ```
 
 Environment variables:
 ```
+# Optional — only needed for higher-quality GPT translation.
+# Leave unset to run proxy + free MyMemory translation with no API key.
 OPENAI_API_KEY=
-SERVER_PORT=3000
-# Add per-country proxy credentials as needed — see proxies/registry.js
+OPENAI_BASE_URL=https://api.openai.com/v1
+PORT=3000
+# Add per-country proxy hosts as needed — see proxies/registry.js / .env.example
 ```
+
+`OPENAI_API_KEY` is **optional**. The server starts and country proxy endpoints work without it. Page translation uses OpenAI when the key is set; otherwise it falls back to the free [MyMemory](https://mymemory.translated.net/) API (no key required).
 
 ### Extension
 
