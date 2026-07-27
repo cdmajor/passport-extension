@@ -3,7 +3,9 @@
 // The calling server's IP must be whitelisted in the Smartproxy dashboard.
 // Proxies are cached for 25 min (life=30 min, 5 min safety buffer).
 
-const API_KEY = process.env.SMARTPROXY_API_KEY ?? "";
+// SMARTPROXY_API_KEY is preferred; fall back to SMARTPROXY_PASS which doubles
+// as the app_key on white-label Smartproxy accounts.
+const API_KEY = process.env.SMARTPROXY_API_KEY || process.env.SMARTPROXY_PASS || "";
 const BASE    = "https://api.smartproxy.org/web_v1/ip/get-ip-v3";
 const TTL_MS  = 25 * 60 * 1000;
 
