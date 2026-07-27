@@ -2,3 +2,7 @@ node_modules/
 .env
 dist/
 *.zip
+mac/Passport.xcodeproj/
+mac/build/
+mac/DerivedData/
+safari/SafariPassport/

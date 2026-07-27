@@ -1,94 +1,54 @@
 # Passport — Browse the Internet from Anywhere
 
-A Chrome & Safari extension that routes your traffic through a country of your choice and translates pages into your native language.
+A **Chrome extension** and **Mac app** (with Safari translation companion) that routes your traffic through a country of your choice and translates pages into your language — **no API keys required**.
 
 ## How It Works
 
-1. User clicks the Passport toolbar icon and picks a country
-2. The extension sets a PAC-script proxy via `chrome.proxy.settings.set()` — all tab traffic is rerouted through a country-specific SOCKS5/HTTP proxy
-3. Sites see a foreign IP and serve geo-appropriate content (region-locked video, local search results, country pricing, etc.)
-4. The content script optionally translates the page text into the user's preferred language (no API key required)
+1. Pick a country in the Chrome extension or Mac menu bar app
+2. Traffic is routed through that country’s proxy (Chrome PAC script, or macOS system proxy for Safari and all Mac apps)
+3. Sites see a foreign IP and serve geo-appropriate content
+4. Optional auto-translate rewrites page text into your native language via Google Translate’s public endpoint (no API key)
+
+## Platforms
+
+| Platform | What you get |
+|----------|----------------|
+| **Chrome** | Full extension: country proxy + page translation |
+| **Mac** | Menu bar app sets system proxy (Safari, Chrome, apps) |
+| **Safari** | Translation extension; pair with the Mac app for routing |
 
 ## Repo Structure
 
 ```
 passport-extension/
-├── extension/              # Browser extension (Chrome MV3 / Safari)
-│   ├── manifest.json
-│   ├── background.js       # Proxy switching logic (chrome.proxy API)
-│   ├── content.js          # Optional page translation
-│   ├── popup/              # Country picker UI
-│   │   ├── popup.html
-│   │   ├── popup.js
-│   │   └── popup.css
-│   ├── options/            # Settings: native language, auto-translate toggle
-│   │   ├── options.html
-│   │   └── options.js
-│   └── icons/
-├── server/                 # Node.js API server
-│   ├── index.js            # Express entry point
+├── extension/              # Chrome MV3 extension
+├── safari/                 # Safari Web Extension (translation companion)
+├── mac/                    # Native macOS menu bar app (SwiftUI)
+├── server/                 # Node.js API (proxy configs + translation)
+│   ├── languages.js        # 134 translation target languages
 │   ├── routes/
-│   │   ├── proxy.js        # GET /api/proxy/countries, GET /api/proxy/config/:countryCode
-│   │   └── translate.js    # POST /api/translate (free MyMemory, no API key)
-│   └── proxies/
-│       └── registry.js     # Country → proxy server mapping
-└── landing/                # React + Vite landing/download page
-    └── src/
-        ├── App.tsx
-        ├── index.css
-        └── main.tsx
+│   │   ├── proxy.js
+│   │   └── translate.js    # Google Translate (client=gtx), no API key
+│   └── proxies/registry.js
+└── README.md
 ```
 
-## Proxy Architecture
+## Translation
 
-The extension uses Chrome's built-in `chrome.proxy` API with a PAC (Proxy Auto-Config) script:
-
-```js
-// background.js
-const pac = `
-  function FindProxyForURL(url, host) {
-    return "SOCKS5 ${proxyHost}:${proxyPort}";
-  }
-`;
-chrome.proxy.settings.set({
-  value: { mode: "pac_script", pacScript: { data: pac } },
-  scope: "regular"
-});
-```
-
-This routes **all** browser traffic (not just one tab) through the proxy. To scope it per-tab you'd need a separate proxy per tab, which requires a different architecture — see the `per-tab` branch notes in `extension/background.js`.
-
-### Proxy Registry
-
-`server/proxies/registry.js` maps ISO country codes to proxy server configs:
-
-```js
-module.exports = {
-  US: { host: "us-proxy.example.com", port: 1080, protocol: "socks5" },
-  FR: { host: "fr-proxy.example.com", port: 1080, protocol: "socks5" },
-  JP: { host: "jp-proxy.example.com", port: 1080, protocol: "socks5" },
-  // ... one entry per supported country
-};
-```
-
-**You need to supply proxy server credentials.** Options:
-- Self-host with [Outline](https://getoutline.org/) or [3proxy](https://3proxy.ru/) on a VPS per country
-- Buy wholesale residential proxies from a provider (Bright Data, Oxylabs, Smartproxy) and map their endpoints here
-- Use a commercial SOCKS5 API and call their endpoint per country selection
+- **134 languages** (same list in Chrome settings, Safari settings, Mac settings, and `GET /api/languages`)
+- Powered by Google’s public `translate.googleapis.com` endpoint — **no API key for you or your users**
+- Quality is far stronger than MyMemory for everyday web pages
 
 ### Server API
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` or `/api/health` | Health check |
-| GET | `/api/proxy/countries` | Returns list of available countries with names + codes |
-| GET | `/api/proxy/config/:countryCode` | Returns proxy host/port for the given country (served over HTTPS only) |
-| POST | `/api/translate` | Translates page text (free MyMemory — no API key) |
-| POST | `/api/detect` | Detects sample language |
-
-The extension fetches `/api/proxy/config/:countryCode` and uses the returned host/port to build its PAC script. Credentials are never stored in the extension itself — they are resolved server-side and injected into the PAC script response.
-
-Page translation uses the free [MyMemory](https://mymemory.translated.net/) API. End users never need an API key — install the extension, pick a country, optionally enable auto-translate.
+| GET | `/api/languages` | Supported translation languages |
+| GET | `/api/proxy/countries` | Available countries |
+| GET | `/api/proxy/config/:countryCode` | Proxy host/port for a country |
+| POST | `/api/translate` | Translate texts (no API key) |
+| POST | `/api/detect` | Detect sample language |
 
 ## Setup
 
@@ -104,36 +64,61 @@ npm run dev
 Environment variables:
 ```
 PORT=3000
-# Add per-country proxy hosts as needed — see proxies/registry.js / .env.example
+# Per-country proxy hosts — see proxies/registry.js / .env.example
 ```
 
-No API keys are required. Translation works out of the box via MyMemory.
+### Chrome extension
 
-### Extension
-
-1. Set `API_BASE` in `extension/background.js` to your server URL (or use the landing page download button — it bakes it in at download time)
+1. Set `API_BASE` in `extension/background.js` to your server URL including `/api` (e.g. `http://localhost:3000/api`)
 2. Open `chrome://extensions` → Developer Mode → Load Unpacked → select `extension/`
-3. Safari: use Xcode → File → New → Target → Safari Web Extension → import
 
-### Landing Page
+### Mac app
+
+See [`mac/README.md`](mac/README.md). Short version:
 
 ```bash
-cd landing
-npm install
-npm run dev
+brew install xcodegen
+cd mac && xcodegen generate && open Passport.xcodeproj
 ```
+
+Run Passport, set the API base URL in Settings, pick a country. System proxy now covers Safari and other apps.
+
+### Safari translation extension
+
+See [`safari/README.md`](safari/README.md). Convert with `xcrun safari-web-extension-converter`, enable in Safari Settings → Extensions, and use the Mac app for country routing.
+
+## Proxy Architecture
+
+### Chrome
+
+Uses `chrome.proxy` with a PAC script:
+
+```js
+function FindProxyForURL(url, host) {
+  return "SOCKS5 ${proxyHost}:${proxyPort}";
+}
+```
+
+### Mac / Safari
+
+The Mac app calls `networksetup` to set the active service’s SOCKS or HTTP proxy system-wide. Safari has no PAC API equivalent, so this is the supported path on Apple platforms.
+
+### Proxy Registry
+
+`server/proxies/registry.js` maps ISO country codes to proxy servers. Supply your own hosts (self-hosted VPS, residential providers, etc.) via env vars — see `.env.example`.
 
 ## Permissions
 
-The extension requires these Chrome permissions:
-- `proxy` — to set the country proxy
-- `storage` — to persist the selected country and language preferences
-- `activeTab` — for the content script translation feature
-- `scripting` — to inject the translation content script on demand
+**Chrome:** `proxy`, `storage`, `activeTab`, `scripting`
+
+**Mac app:** network client; sandbox off so it can run `networksetup`
+
+**Safari extension:** `storage`, `activeTab`, `scripting` (no proxy permission — Mac app handles routing)
 
 ## Known Limitations
 
-- `chrome.proxy.settings.set()` applies to the **entire browser profile**, not a single tab. All tabs change country simultaneously.
-- VPNs and system proxies can conflict with the extension proxy setting.
-- Safari's proxy API support is more limited than Chrome's — test thoroughly on Safari.
-- Some streaming services (Netflix, Disney+) detect and block datacenter proxies. Residential proxies work better for those.
+- Chrome’s `chrome.proxy` applies to the whole browser profile, not a single tab
+- Safari country routing requires the Mac menu bar app
+- The Google web translate endpoint is undocumented and rate-limited; fine for personal use, not a billed SLA
+- Some streaming services block datacenter proxies — residential proxies work better
+- macOS may prompt for admin approval when changing system proxy settings

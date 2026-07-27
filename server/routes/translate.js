@@ -1,84 +1,81 @@
 import { Router } from "express";
+import {
+  LANGUAGES,
+  nameForCode,
+  resolveLangCode,
+} from "../languages.js";
 
 const router = Router();
 
-// Language display names (from the extension options UI) → ISO 639-1 codes
-const LANG_CODES = {
-  English: "en",
-  Spanish: "es",
-  French: "fr",
-  German: "de",
-  Japanese: "ja",
-  Korean: "ko",
-  Portuguese: "pt",
-  Italian: "it",
-  "Chinese (Simplified)": "zh-CN",
-  "Chinese (Traditional)": "zh-TW",
-  Arabic: "ar",
-  Hindi: "hi",
-  Russian: "ru",
-  Turkish: "tr",
-  Dutch: "nl",
-  Polish: "pl",
-  Swedish: "sv",
-  Vietnamese: "vi",
-  Thai: "th",
-  Indonesian: "id",
-};
+const TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single";
 
-const CODE_TO_NAME = Object.fromEntries(
-  Object.entries(LANG_CODES).map(([name, code]) => [code.toLowerCase(), name])
-);
-
-function resolveLangCode(targetLanguage) {
-  if (LANG_CODES[targetLanguage]) return LANG_CODES[targetLanguage];
-  return String(targetLanguage).trim();
-}
-
-// Free MyMemory translation — no API key, seamless for users
+/**
+ * Translate via Google's public web endpoint (client=gtx).
+ * No API key required — same engine as translate.google.com.
+ */
 async function translateOne(text, targetCode) {
-  const url = new URL("https://api.mymemory.translated.net/get");
-  url.searchParams.set("q", text.slice(0, 450));
-  url.searchParams.set("langpair", `Autodetect|${targetCode}`);
+  const url = new URL(TRANSLATE_URL);
+  url.searchParams.set("client", "gtx");
+  url.searchParams.set("sl", "auto");
+  url.searchParams.set("tl", targetCode);
+  url.searchParams.set("dt", "t");
+  url.searchParams.set("ie", "UTF-8");
+  url.searchParams.set("oe", "UTF-8");
+  url.searchParams.set("q", text);
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Translation service HTTP ${res.status}`);
 
   const data = await res.json();
-  if (data.responseStatus !== 200 && data.responseStatus !== "200") {
-    throw new Error(data.responseDetails || "Translation failed");
+  if (!Array.isArray(data?.[0])) {
+    throw new Error("Unexpected translation response");
   }
 
-  return data.responseData?.translatedText ?? text;
+  return data[0].map((part) => part?.[0] ?? "").join("");
 }
 
 async function translateTexts(texts, targetLanguage) {
   const targetCode = resolveLangCode(targetLanguage);
-  const translations = [];
-  for (const text of texts) {
-    translations.push(await translateOne(text, targetCode));
+  // Parallel with a modest concurrency limit to stay polite to the free endpoint
+  const concurrency = 5;
+  const translations = new Array(texts.length);
+
+  for (let i = 0; i < texts.length; i += concurrency) {
+    const slice = texts.slice(i, i + concurrency);
+    const results = await Promise.all(
+      slice.map((text) => translateOne(text, targetCode))
+    );
+    results.forEach((t, j) => {
+      translations[i + j] = t;
+    });
   }
+
   return translations;
 }
 
 async function detectLanguage(sample) {
-  const url = new URL("https://api.mymemory.translated.net/get");
-  url.searchParams.set("q", sample.slice(0, 200));
-  url.searchParams.set("langpair", "Autodetect|en");
+  const url = new URL(TRANSLATE_URL);
+  url.searchParams.set("client", "gtx");
+  url.searchParams.set("sl", "auto");
+  url.searchParams.set("tl", "en");
+  url.searchParams.set("dt", "t");
+  url.searchParams.set("ie", "UTF-8");
+  url.searchParams.set("oe", "UTF-8");
+  url.searchParams.set("q", sample.slice(0, 500));
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Language detect HTTP ${res.status}`);
 
   const data = await res.json();
-  const matches = data.matches ?? [];
-  const detected =
-    matches.find((m) => m.source)?.source || data.responseData?.detectedLanguage;
-
-  if (!detected) return "Unknown";
-
-  const code = String(detected).toLowerCase();
-  return CODE_TO_NAME[code] || CODE_TO_NAME[code.split("-")[0]] || detected;
+  // Response shape: [[["Hello","Hola",...]], null, "es", ...]
+  const detected = data?.[2];
+  return nameForCode(detected);
 }
+
+// GET /api/languages — list supported translation targets
+router.get("/languages", (_req, res) => {
+  res.json({ languages: LANGUAGES });
+});
 
 // POST /api/translate
 // Body: { texts: string[], targetLanguage: string }

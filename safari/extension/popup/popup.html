@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passport</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <span class="logo">Passport</span>
+    <span id="status-badge" class="badge badge-off">Off</span>
+  </div>
+  <p class="mac-note">Country routing: use the Passport Mac menu bar app. This extension handles translation.</p>
+
+  <div id="active-country" class="active-country hidden">
+    <span id="active-flag"></span>
+    <span id="active-name"></span>
+    <button id="disconnect-btn" class="btn-disconnect">Disconnect</button>
+  </div>
+
+  <div class="search-wrap">
+    <input id="search" type="text" placeholder="Search country…" autocomplete="off" />
+  </div>
+
+  <ul id="country-list" class="country-list"></ul>
+
+  <div class="footer">
+    <label class="toggle-row">
+      <span>Auto-translate pages</span>
+      <input type="checkbox" id="auto-translate" />
+    </label>
+    <a href="#" id="open-options">Settings</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
