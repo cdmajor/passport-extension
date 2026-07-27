@@ -34,8 +34,11 @@ router.get("/", async (req, res): Promise<void> => {
     const usage = await getUsage(membershipId, plan);
     res.json(usage);
   } catch (err) {
+    const msg = (err as Error).message ?? "";
+    // Whop throws on unknown membership IDs — surface as 404, not 500
+    const status = msg.includes("not found") || msg.includes("404") ? 404 : 500;
     req.log.error(err, "Usage fetch error");
-    res.status(500).json({ error: (err as Error).message });
+    res.status(status).json({ error: status === 404 ? "Membership not found" : msg });
   }
 });
 

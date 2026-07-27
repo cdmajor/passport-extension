@@ -4,17 +4,26 @@ import { getWhopClient } from "../lib/whopClient";
 const router = Router();
 
 const COMPANY_ID = process.env.WHOP_COMPANY_ID!;
-const PLAN_ID = process.env.WHOP_PLAN_ID!;
-const APP_URL = process.env.APP_URL ?? "https://git-hub-publisher.replit.app";
+const APP_URL    = process.env.APP_URL ?? "https://git-hub-publisher.replit.app";
+
+const VALID_PLANS = new Set([
+  process.env.WHOP_PLAN_LITE     ?? "plan_sCvQDQK8tMuGz",
+  process.env.WHOP_PLAN_EXPLORER ?? "plan_yWK8tkAhYFFHf",
+  process.env.WHOP_PLAN_PRO      ?? "plan_b38qgRyEYt5Da",
+]);
+const DEFAULT_PLAN = process.env.WHOP_PLAN_EXPLORER ?? "plan_yWK8tkAhYFFHf";
 
 // POST /api/whop/checkout
 // Creates a Whop checkout session and returns the purchase URL.
-// Body: {} (plan is fixed server-side)
+// Body: { plan_id?: string }  — falls back to Explorer if omitted or invalid
 router.post("/checkout", async (req, res): Promise<void> => {
+  const requestedPlan = (req.body as { plan_id?: string }).plan_id ?? "";
+  const planId = VALID_PLANS.has(requestedPlan) ? requestedPlan : DEFAULT_PLAN;
+
   try {
     const client = await getWhopClient();
     const config = await client.checkoutConfigurations.create({
-      plan_id: PLAN_ID,
+      plan_id: planId,
       redirect_url: `${APP_URL}/api/whop/success`,
     });
     res.json({ purchase_url: config.purchase_url, checkout_id: config.id });
@@ -100,10 +109,10 @@ router.post("/verify", async (req, res): Promise<void> => {
 // Returns public plan info (price, name) so the extension can show it.
 router.get("/plan", async (_req, res): Promise<void> => {
   res.json({
-    plan_id: PLAN_ID,
-    price: "$9.99 / month",
-    name: "Passport Pro",
-    purchase_url: `https://whop.com/checkout/${PLAN_ID}`,
+    plan_id: DEFAULT_PLAN,
+    price: "$12.99 / month",
+    name: "Passport Explorer",
+    purchase_url: `https://whop.com/checkout/${DEFAULT_PLAN}`,
   });
 });
 
