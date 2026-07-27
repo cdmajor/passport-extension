@@ -1,25 +1,57 @@
 import { Router } from "express";
-import registry, { isProxyConfigured } from "../lib/proxyRegistry";
+import { getProxyForCountry, isSmartproxyConfigured } from "../lib/smartproxy";
 import { getWhopClient } from "../lib/whopClient";
 
 const router = Router();
 
-// GET /api/proxy/countries — list all available countries
+const COUNTRIES: Record<string, { name: string; flagEmoji: string }> = {
+  US: { name: "United States",  flagEmoji: "🇺🇸" },
+  GB: { name: "United Kingdom", flagEmoji: "🇬🇧" },
+  CA: { name: "Canada",         flagEmoji: "🇨🇦" },
+  AU: { name: "Australia",      flagEmoji: "🇦🇺" },
+  DE: { name: "Germany",        flagEmoji: "🇩🇪" },
+  FR: { name: "France",         flagEmoji: "🇫🇷" },
+  JP: { name: "Japan",          flagEmoji: "🇯🇵" },
+  KR: { name: "South Korea",    flagEmoji: "🇰🇷" },
+  BR: { name: "Brazil",         flagEmoji: "🇧🇷" },
+  IN: { name: "India",          flagEmoji: "🇮🇳" },
+  SG: { name: "Singapore",      flagEmoji: "🇸🇬" },
+  NL: { name: "Netherlands",    flagEmoji: "🇳🇱" },
+  MX: { name: "Mexico",         flagEmoji: "🇲🇽" },
+  ZA: { name: "South Africa",   flagEmoji: "🇿🇦" },
+  IT: { name: "Italy",          flagEmoji: "🇮🇹" },
+  ES: { name: "Spain",          flagEmoji: "🇪🇸" },
+  SE: { name: "Sweden",         flagEmoji: "🇸🇪" },
+  NO: { name: "Norway",         flagEmoji: "🇳🇴" },
+  CH: { name: "Switzerland",    flagEmoji: "🇨🇭" },
+  PL: { name: "Poland",         flagEmoji: "🇵🇱" },
+  TR: { name: "Turkey",         flagEmoji: "🇹🇷" },
+  PT: { name: "Portugal",       flagEmoji: "🇵🇹" },
+  AR: { name: "Argentina",      flagEmoji: "🇦🇷" },
+  ID: { name: "Indonesia",      flagEmoji: "🇮🇩" },
+  PH: { name: "Philippines",    flagEmoji: "🇵🇭" },
+  TH: { name: "Thailand",       flagEmoji: "🇹🇭" },
+  VN: { name: "Vietnam",        flagEmoji: "🇻🇳" },
+  NZ: { name: "New Zealand",    flagEmoji: "🇳🇿" },
+  NG: { name: "Nigeria",        flagEmoji: "🇳🇬" },
+  RO: { name: "Romania",        flagEmoji: "🇷🇴" },
+};
+
+// GET /api/proxy/countries
 router.get("/countries", (_req, res) => {
-  const configured = isProxyConfigured();
-  const countries = Object.entries(registry).map(([code, config]) => ({
+  const available = isSmartproxyConfigured();
+  const countries = Object.entries(COUNTRIES).map(([code, { name, flagEmoji }]) => ({
     code,
-    name: config.name,
-    flagEmoji: config.flagEmoji,
-    available: configured,
+    name,
+    flagEmoji,
+    available,
   }));
   res.json({ countries });
 });
 
 // GET /api/proxy/config/:countryCode
-// Returns proxy host/port/credentials for the extension.
-// Requires a valid active Whop membership_id in the Authorization header:
-//   Authorization: Bearer mem_xxx
+// Requires: Authorization: Bearer <membership_id>
+// Returns a fresh proxy IP for the requested country.
 router.get("/config/:countryCode", async (req, res): Promise<void> => {
   // Verify subscription
   const auth = req.headers.authorization ?? "";
@@ -44,25 +76,23 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
   }
 
   const code = req.params.countryCode.toUpperCase();
-  const entry = registry[code];
-
-  if (!entry) {
-    res.status(404).json({ error: `No proxy configured for country: ${code}` });
+  if (!COUNTRIES[code]) {
+    res.status(404).json({ error: `Unknown country: ${code}` });
     return;
   }
 
-  if (!isProxyConfigured()) {
-    res.status(503).json({ error: "Proxy not configured on server" });
+  if (!isSmartproxyConfigured()) {
+    res.status(503).json({ error: "Proxy service not configured" });
     return;
   }
 
-  res.json({
-    host: entry.host,
-    port: entry.port,
-    protocol: entry.protocol,
-    username: entry.username,
-    password: entry.password,
-  });
+  try {
+    const config = await getProxyForCountry(code);
+    res.json(config);
+  } catch (err) {
+    req.log.error(err, "Smartproxy fetch error");
+    res.status(502).json({ error: (err as Error).message });
+  }
 });
 
 export default router;
