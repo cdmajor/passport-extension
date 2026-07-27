@@ -8,9 +8,10 @@ The **Chrome** build is unchanged:
 
 | Path | Browser |
 |------|---------|
-| `passport-extension.zip` | Packaged Chrome extension (unchanged) |
-| `chrome-extension/` | Unpacked Chrome source (PAC proxy + translate) |
-| `safari/extension/` | Safari source (no PAC; translate + Whop) |
+| `../passport-extension.zip` | Packaged **Chrome** extension (unchanged) |
+| `../safari-extension.zip` | Packaged **Safari** extension (separate file) |
+| `../chrome-extension/` | Unpacked Chrome source (PAC proxy + translate) |
+| `./extension/` | Safari source (no PAC; translate + Whop) |
 
 ## Convert & install (Mac + Xcode)
 
