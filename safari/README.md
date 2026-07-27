@@ -8,8 +8,9 @@ The **Chrome** build is unchanged:
 
 | Path | Browser |
 |------|---------|
-| `../passport-extension.zip` | Packaged **Chrome** extension (unchanged) |
-| `../safari-extension.zip` | Packaged **Safari** extension (separate file) |
+| `../chrome-extension.zip` | Packaged **Chrome** (download this) |
+| `../safari-extension.zip` | Packaged **Safari** (download this — separate file) |
+| `../passport-extension.zip` | Same Chrome package (legacy filename) |
 | `../chrome-extension/` | Unpacked Chrome source (PAC proxy + translate) |
 | `./extension/` | Safari source (no PAC; translate + Whop) |
 

@@ -4,8 +4,9 @@ Unpacked source for the **Chrome** build. The packaged zip at the repo root (`pa
 
 | Path | Role |
 |------|------|
-| `../passport-extension.zip` | Packaged **Chrome** extension (separate from Safari) |
-| `../safari-extension.zip` | Packaged **Safari** extension (separate file) |
+| `../chrome-extension.zip` | Packaged **Chrome** download |
+| `../safari-extension.zip` | Packaged **Safari** download (separate file) |
+| `../passport-extension.zip` | Same Chrome package (legacy filename) |
 | `./` (this folder) | Unpacked Chrome MV3 source |
 | `../safari/extension/` | Safari variant (no PAC proxy) |
 
