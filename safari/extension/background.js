@@ -18,7 +18,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         chrome.tabs.query({}, (tabs) => {
           for (const tab of tabs) {
             if (tab.id != null) {
-              chrome.tabs.sendMessage(tab.id, { type: "COUNTRY_CHANGED", country: message.country }).catch(() => {});
+              chrome.tabs.sendMessage(tab.id, { type: "COUNTRY_CHANGED", country: message.country }, () => {
+                void chrome.runtime.lastError;
+              });
             }
           }
         });
