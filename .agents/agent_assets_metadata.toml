@@ -5,4 +5,10 @@ generated = []
 id = "YGx-PfQ3ivTZ05zp3X1VN"
 uri = "file://passport-extension.zip"
 type = "unspecified"
-title = "Passport Extension (with subscriptions)"
+title = "Passport Extension v1.1"
+
+[[outputs]]
+id = "icRjmZdd4punmh25hK2Hp"
+uri = "file://attached_assets/generated_images/cws-screenshot.jpg"
+type = "image"
+title = "Chrome Web Store screenshot"
