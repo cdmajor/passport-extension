@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { getProxyForCountry, isSmartproxyConfigured } from "../lib/smartproxy";
 import { getWhopClient } from "../lib/whopClient";
+import { recordSession } from "../lib/usageTracker";
+import { PLANS } from "../lib/plans";
 
 const router = Router();
 
@@ -41,19 +43,15 @@ const COUNTRIES: Record<string, { name: string; flagEmoji: string }> = {
 router.get("/countries", (_req, res) => {
   const available = isSmartproxyConfigured();
   const countries = Object.entries(COUNTRIES).map(([code, { name, flagEmoji }]) => ({
-    code,
-    name,
-    flagEmoji,
-    available,
+    code, name, flagEmoji, available,
   }));
   res.json({ countries });
 });
 
 // GET /api/proxy/config/:countryCode
 // Requires: Authorization: Bearer <membership_id>
-// Returns a fresh proxy IP for the requested country.
+// Records a session, enforces tier limits, returns proxy + usage info.
 router.get("/config/:countryCode", async (req, res): Promise<void> => {
-  // Verify subscription
   const auth = req.headers.authorization ?? "";
   const membershipId = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
 
@@ -62,6 +60,8 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
     return;
   }
 
+  // Verify subscription and get plan
+  let planId: string;
   try {
     const client = await getWhopClient();
     const membership = await client.memberships.retrieve(membershipId);
@@ -70,8 +70,26 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
       res.status(403).json({ error: "Subscription inactive" });
       return;
     }
+    planId = membership.plan?.id ?? "";
   } catch {
     res.status(403).json({ error: "Could not verify subscription" });
+    return;
+  }
+
+  const plan = PLANS[planId];
+  if (!plan) {
+    res.status(400).json({ error: "Unknown plan — please re-subscribe" });
+    return;
+  }
+
+  // Record session and check limits
+  const usage = await recordSession(membershipId, plan);
+  if (usage.atLimit) {
+    res.status(402).json({
+      error:      "bandwidth_limit_reached",
+      message:    `You've used all ${plan.gbLimit} GB on your ${plan.name} plan this month.`,
+      usage,
+    });
     return;
   }
 
@@ -88,7 +106,7 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
 
   try {
     const config = await getProxyForCountry(code);
-    res.json(config);
+    res.json({ ...config, usage });
   } catch (err) {
     req.log.error(err, "Smartproxy fetch error");
     res.status(502).json({ error: (err as Error).message });

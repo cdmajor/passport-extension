@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -31,3 +31,9 @@ WHOP_COMPANY_ID = "biz_vKCFtvZlUoKYyW"
 WHOP_PRODUCT_ID = "prod_BWZZpCCjntFOl"
 WHOP_PLAN_ID = "plan_5RSwKy5Jhdat4"
 SMARTPROXY_API_KEY = "26fd8860c4e84d2e0a1a5f0b24c9509d"
+WHOP_PLAN_EXPLORER = "plan_yWK8tkAhYFFHf"
+WHOP_PLAN_LITE = "plan_sCvQDQK8tMuGz"
+WHOP_PLAN_PRO = "plan_b38qgRyEYt5Da"
+
+[nix]
+channel = "stable-25_05"
