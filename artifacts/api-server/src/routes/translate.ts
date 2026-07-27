@@ -1,7 +1,34 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { LANGUAGES, nameForCode, resolveLangCode } from "../lib/languages";
 
 const router = Router();
+
+// ── Simple in-memory rate limiter ────────────────────────────────────────────
+// 120 translate/detect requests per IP per minute. Resets each minute.
+// Protects the Google gtx endpoint from CORS-based abuse without blocking
+// legitimate extension users (who rarely exceed a few calls per page load).
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 120;
+const RATE_WINDOW = 60_000;
+
+function checkRateLimit(req: Request): boolean {
+  const ip = (req.headers["x-forwarded-for"] as string ?? req.socket.remoteAddress ?? "unknown")
+    .split(",")[0].trim();
+  const now = Date.now();
+  let bucket = rateBuckets.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + RATE_WINDOW };
+    rateBuckets.set(ip, bucket);
+  }
+  bucket.count++;
+  return bucket.count <= RATE_LIMIT;
+}
+
+// Purge stale buckets every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, b] of rateBuckets) if (now > b.resetAt) rateBuckets.delete(ip);
+}, 5 * 60_000);
 
 const TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single";
 
@@ -73,6 +100,10 @@ router.get("/languages", (_req, res) => {
 // POST /api/translate
 // Body: { texts: string[], targetLanguage: string }
 router.post("/translate", async (req, res): Promise<void> => {
+  if (!checkRateLimit(req)) {
+    res.status(429).json({ error: "Rate limit exceeded. Please slow down." });
+    return;
+  }
   const { texts, targetLanguage } = req.body as {
     texts?: unknown;
     targetLanguage?: unknown;
@@ -99,6 +130,10 @@ router.post("/translate", async (req, res): Promise<void> => {
 // POST /api/detect
 // Body: { sample: string }
 router.post("/detect", async (req, res): Promise<void> => {
+  if (!checkRateLimit(req)) {
+    res.status(429).json({ error: "Rate limit exceeded. Please slow down." });
+    return;
+  }
   const { sample } = req.body as { sample?: unknown };
   if (!sample) {
     res.status(400).json({ error: "sample is required" });

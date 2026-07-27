@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getProxyForCountry, isSmartproxyConfigured } from "../lib/smartproxy";
 import { getWhopClient } from "../lib/whopClient";
-import { recordSession } from "../lib/usageTracker";
+import { recordSession, getUsage } from "../lib/usageTracker";
 import { PLANS } from "../lib/plans";
 
 const router = Router();
@@ -50,8 +50,11 @@ router.get("/countries", (_req, res) => {
 
 // GET /api/proxy/config/:countryCode
 // Requires: Authorization: Bearer <membership_id>
-// Records a session, enforces tier limits, returns proxy + usage info.
+// Records a session and enforces tier limits, then returns proxy + usage info.
+// Pass ?refresh=1 to skip session recording (used on browser restart to
+// reapply an already-active proxy without burning quota).
 router.get("/config/:countryCode", async (req, res): Promise<void> => {
+  const isRefresh = req.query.refresh === "1";
   const auth = req.headers.authorization ?? "";
   const membershipId = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
 
@@ -82,8 +85,11 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
     return;
   }
 
-  // Record session and check limits
-  const usage = await recordSession(membershipId, plan);
+  // Record session (skip on ?refresh=1 — browser restart reapplying existing proxy)
+  const usage = isRefresh
+    ? await getUsage(membershipId, plan)
+    : await recordSession(membershipId, plan);
+
   if (usage.atLimit) {
     res.status(402).json({
       error:      "bandwidth_limit_reached",
