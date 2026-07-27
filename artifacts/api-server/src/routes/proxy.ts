@@ -85,7 +85,31 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
     return;
   }
 
-  // Record session (skip on ?refresh=1 — browser restart reapplying existing proxy)
+  // Validate country and proxy availability BEFORE recording a session,
+  // so a bad country code or unconfigured proxy never burns quota.
+  const code = req.params.countryCode.toUpperCase();
+  if (!COUNTRIES[code]) {
+    res.status(404).json({ error: `Unknown country: ${code}` });
+    return;
+  }
+
+  if (!isSmartproxyConfigured()) {
+    res.status(503).json({ error: "Proxy service not configured" });
+    return;
+  }
+
+  // Fetch the proxy config BEFORE recording a session — a 502 from Smartproxy
+  // no longer costs the user a session.
+  let config: Awaited<ReturnType<typeof getProxyForCountry>>;
+  try {
+    config = await getProxyForCountry(code);
+  } catch (err) {
+    req.log.error(err, "Smartproxy fetch error");
+    res.status(502).json({ error: (err as Error).message });
+    return;
+  }
+
+  // Now record the session (or just read usage on ?refresh=1).
   const usage = isRefresh
     ? await getUsage(membershipId, plan)
     : await recordSession(membershipId, plan);
@@ -99,24 +123,7 @@ router.get("/config/:countryCode", async (req, res): Promise<void> => {
     return;
   }
 
-  const code = req.params.countryCode.toUpperCase();
-  if (!COUNTRIES[code]) {
-    res.status(404).json({ error: `Unknown country: ${code}` });
-    return;
-  }
-
-  if (!isSmartproxyConfigured()) {
-    res.status(503).json({ error: "Proxy service not configured" });
-    return;
-  }
-
-  try {
-    const config = await getProxyForCountry(code);
-    res.json({ ...config, usage });
-  } catch (err) {
-    req.log.error(err, "Smartproxy fetch error");
-    res.status(502).json({ error: (err as Error).message });
-  }
+  res.json({ ...config, usage });
 });
 
 export default router;
