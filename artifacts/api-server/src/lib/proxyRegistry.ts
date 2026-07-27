@@ -1,114 +1,84 @@
 // Passport — Country Proxy Registry
-// Each entry maps an ISO 3166-1 alpha-2 country code to a proxy server config.
-// Populate via environment variables (see .env.example).
+//
+// Uses a single Smartproxy endpoint. Country is selected by encoding it into
+// the proxy username:  user-country-{CODE}-sessionduration-10
+//
+// Required env vars (set once, all countries work):
+//   PROXY_HOST      e.g. gate.smartproxy.com
+//   PROXY_PORT      e.g. 7000
+//   PROXY_USER      your Smartproxy username (base, without country suffix)
+//   PROXY_PASS      your Smartproxy password
+//
+// Sign up at: https://smartproxy.com  (Residential Proxies plan)
 
 export interface ProxyEntry {
   host: string;
   port: number;
-  protocol: "socks5" | "http" | "https";
+  protocol: "http" | "socks5" | "https";
+  username: string;
+  password: string;
   name: string;
   flagEmoji: string;
 }
 
-const registry: Record<string, ProxyEntry> = {
-  US: {
-    host: process.env.PROXY_US_HOST ?? "REPLACE_WITH_US_PROXY_HOST",
-    port: parseInt(process.env.PROXY_US_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "United States",
-    flagEmoji: "🇺🇸",
-  },
-  GB: {
-    host: process.env.PROXY_GB_HOST ?? "REPLACE_WITH_GB_PROXY_HOST",
-    port: parseInt(process.env.PROXY_GB_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "United Kingdom",
-    flagEmoji: "🇬🇧",
-  },
-  CA: {
-    host: process.env.PROXY_CA_HOST ?? "REPLACE_WITH_CA_PROXY_HOST",
-    port: parseInt(process.env.PROXY_CA_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Canada",
-    flagEmoji: "🇨🇦",
-  },
-  AU: {
-    host: process.env.PROXY_AU_HOST ?? "REPLACE_WITH_AU_PROXY_HOST",
-    port: parseInt(process.env.PROXY_AU_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Australia",
-    flagEmoji: "🇦🇺",
-  },
-  DE: {
-    host: process.env.PROXY_DE_HOST ?? "REPLACE_WITH_DE_PROXY_HOST",
-    port: parseInt(process.env.PROXY_DE_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Germany",
-    flagEmoji: "🇩🇪",
-  },
-  FR: {
-    host: process.env.PROXY_FR_HOST ?? "REPLACE_WITH_FR_PROXY_HOST",
-    port: parseInt(process.env.PROXY_FR_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "France",
-    flagEmoji: "🇫🇷",
-  },
-  JP: {
-    host: process.env.PROXY_JP_HOST ?? "REPLACE_WITH_JP_PROXY_HOST",
-    port: parseInt(process.env.PROXY_JP_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Japan",
-    flagEmoji: "🇯🇵",
-  },
-  KR: {
-    host: process.env.PROXY_KR_HOST ?? "REPLACE_WITH_KR_PROXY_HOST",
-    port: parseInt(process.env.PROXY_KR_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "South Korea",
-    flagEmoji: "🇰🇷",
-  },
-  BR: {
-    host: process.env.PROXY_BR_HOST ?? "REPLACE_WITH_BR_PROXY_HOST",
-    port: parseInt(process.env.PROXY_BR_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Brazil",
-    flagEmoji: "🇧🇷",
-  },
-  IN: {
-    host: process.env.PROXY_IN_HOST ?? "REPLACE_WITH_IN_PROXY_HOST",
-    port: parseInt(process.env.PROXY_IN_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "India",
-    flagEmoji: "🇮🇳",
-  },
-  SG: {
-    host: process.env.PROXY_SG_HOST ?? "REPLACE_WITH_SG_PROXY_HOST",
-    port: parseInt(process.env.PROXY_SG_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Singapore",
-    flagEmoji: "🇸🇬",
-  },
-  NL: {
-    host: process.env.PROXY_NL_HOST ?? "REPLACE_WITH_NL_PROXY_HOST",
-    port: parseInt(process.env.PROXY_NL_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Netherlands",
-    flagEmoji: "🇳🇱",
-  },
-  MX: {
-    host: process.env.PROXY_MX_HOST ?? "REPLACE_WITH_MX_PROXY_HOST",
-    port: parseInt(process.env.PROXY_MX_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "Mexico",
-    flagEmoji: "🇲🇽",
-  },
-  ZA: {
-    host: process.env.PROXY_ZA_HOST ?? "REPLACE_WITH_ZA_PROXY_HOST",
-    port: parseInt(process.env.PROXY_ZA_PORT ?? "1080"),
-    protocol: "socks5",
-    name: "South Africa",
-    flagEmoji: "🇿🇦",
-  },
+const HOST = process.env.PROXY_HOST ?? "";
+const PORT = parseInt(process.env.PROXY_PORT ?? "7000");
+const USER = process.env.PROXY_USER ?? "";
+const PASS = process.env.PROXY_PASS ?? "";
+
+const COUNTRIES: Record<string, { name: string; flagEmoji: string }> = {
+  US: { name: "United States",   flagEmoji: "🇺🇸" },
+  GB: { name: "United Kingdom",  flagEmoji: "🇬🇧" },
+  CA: { name: "Canada",          flagEmoji: "🇨🇦" },
+  AU: { name: "Australia",       flagEmoji: "🇦🇺" },
+  DE: { name: "Germany",         flagEmoji: "🇩🇪" },
+  FR: { name: "France",          flagEmoji: "🇫🇷" },
+  JP: { name: "Japan",           flagEmoji: "🇯🇵" },
+  KR: { name: "South Korea",     flagEmoji: "🇰🇷" },
+  BR: { name: "Brazil",          flagEmoji: "🇧🇷" },
+  IN: { name: "India",           flagEmoji: "🇮🇳" },
+  SG: { name: "Singapore",       flagEmoji: "🇸🇬" },
+  NL: { name: "Netherlands",     flagEmoji: "🇳🇱" },
+  MX: { name: "Mexico",          flagEmoji: "🇲🇽" },
+  ZA: { name: "South Africa",    flagEmoji: "🇿🇦" },
+  IT: { name: "Italy",           flagEmoji: "🇮🇹" },
+  ES: { name: "Spain",           flagEmoji: "🇪🇸" },
+  SE: { name: "Sweden",          flagEmoji: "🇸🇪" },
+  NO: { name: "Norway",          flagEmoji: "🇳🇴" },
+  CH: { name: "Switzerland",     flagEmoji: "🇨🇭" },
+  PL: { name: "Poland",          flagEmoji: "🇵🇱" },
+  TR: { name: "Turkey",          flagEmoji: "🇹🇷" },
+  PT: { name: "Portugal",        flagEmoji: "🇵🇹" },
+  AR: { name: "Argentina",       flagEmoji: "🇦🇷" },
+  ID: { name: "Indonesia",       flagEmoji: "🇮🇩" },
+  PH: { name: "Philippines",     flagEmoji: "🇵🇭" },
+  TH: { name: "Thailand",        flagEmoji: "🇹🇭" },
+  VN: { name: "Vietnam",         flagEmoji: "🇻🇳" },
+  NZ: { name: "New Zealand",     flagEmoji: "🇳🇿" },
+  NG: { name: "Nigeria",         flagEmoji: "🇳🇬" },
+  RO: { name: "Romania",         flagEmoji: "🇷🇴" },
 };
+
+function buildEntry(code: string): ProxyEntry {
+  const { name, flagEmoji } = COUNTRIES[code];
+  return {
+    host: HOST,
+    port: PORT,
+    protocol: "http",
+    // Smartproxy country-targeting username format
+    username: USER ? `${USER}-country-${code.toLowerCase()}-sessionduration-10` : "",
+    password: PASS,
+    name,
+    flagEmoji,
+  };
+}
+
+const registry: Record<string, ProxyEntry> = Object.fromEntries(
+  Object.keys(COUNTRIES).map((code) => [code, buildEntry(code)])
+);
+
+export function isProxyConfigured(): boolean {
+  return !!(HOST && USER && PASS);
+}
 
 export default registry;
