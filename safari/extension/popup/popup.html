@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passport</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <img src="../icons/logo.png" alt="Passport" class="logo-img" />
+    <span id="status-badge" class="badge badge-off">Off</span>
+  </div>
+
+  <!-- Subscription gate -->
+  <div id="subscribe-wall" class="subscribe-wall hidden">
+    <img src="../icons/logo.png" alt="Passport" class="subscribe-logo" />
+    <div class="subscribe-title">Passport</div>
+    <div class="subscribe-desc">Translate pages in Safari. Pair with the Mac menu-bar app for country IP routing.</div>
+    <div class="tier-list">
+      <button class="btn-tier" data-plan="lite">
+        <span class="tier-name">Lite</span>
+        <span class="tier-detail">3 GB / month</span>
+        <span class="tier-price">$4.99</span>
+      </button>
+      <button class="btn-tier featured" data-plan="explorer">
+        <span class="tier-name">Explorer ✦</span>
+        <span class="tier-detail">10 GB / month</span>
+        <span class="tier-price">$12.99</span>
+      </button>
+      <button class="btn-tier" data-plan="pro">
+        <span class="tier-name">Pro</span>
+        <span class="tier-detail">30 GB / month</span>
+        <span class="tier-price">$34.99</span>
+      </button>
+    </div>
+    <div id="subscribe-status" class="subscribe-status"></div>
+    <a href="#" id="restore-btn" class="restore-link">Already subscribed? Restore access</a>
+  </div>
+
+  <!-- Main UI (shown when subscribed) -->
+  <div id="main-ui" class="hidden">
+    <p id="safari-note" class="safari-note">
+      Safari cannot set a PAC proxy. Country here is for translation context.
+      Use the Passport Mac menu-bar app for IP routing.
+    </p>
+    <div id="active-country" class="active-country hidden">
+      <span id="active-flag"></span>
+      <span id="active-name"></span>
+      <button id="disconnect-btn" class="btn-disconnect">Clear</button>
+    </div>
+
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Search country…" autocomplete="off" />
+    </div>
+
+    <ul id="country-list" class="country-list"></ul>
+
+    <!-- Usage meter -->
+    <div id="usage-bar-wrap" class="usage-wrap hidden">
+      <div class="usage-top">
+        <span id="usage-label" class="usage-label">0 GB used</span>
+        <span id="usage-tier" class="usage-tier"></span>
+      </div>
+      <div class="usage-track">
+        <div id="usage-fill" class="usage-fill"></div>
+      </div>
+      <div id="usage-limit-msg" class="usage-limit-msg hidden">
+        Data limit reached — <a id="upgrade-link" href="#" class="upgrade-link">Upgrade</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <label class="toggle-row">
+        <span>Auto-translate</span>
+        <input type="checkbox" id="auto-translate" />
+      </label>
+      <a href="#" id="open-options">Settings</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
