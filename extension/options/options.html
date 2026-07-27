@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Passport — Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f0f13; color: #f0f0f0; padding: 32px; max-width: 480px; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+    .section { margin-bottom: 28px; }
+    label { display: block; font-size: 13px; color: #aaa; margin-bottom: 8px; }
+    select, input[type="text"] { width: 100%; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; padding: 9px 12px; color: #f0f0f0; font-size: 14px; outline: none; }
+    select:focus, input:focus { border-color: #6366f1; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1e1e2e; }
+    .toggle-row span { font-size: 14px; }
+    .save-btn { background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .save-btn:hover { background: #4f51c9; }
+    .saved-msg { color: #4ade80; font-size: 12px; margin-left: 12px; opacity: 0; transition: opacity 0.3s; }
+    .saved-msg.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>🛂 Passport Settings</h1>
+
+  <div class="section">
+    <label for="native-lang">Your native language (for auto-translation)</label>
+    <select id="native-lang">
+      <option value="">— Select language —</option>
+      <option value="English">English</option>
+      <option value="Spanish">Spanish</option>
+      <option value="French">French</option>
+      <option value="German">German</option>
+      <option value="Japanese">Japanese</option>
+      <option value="Korean">Korean</option>
+      <option value="Portuguese">Portuguese</option>
+      <option value="Italian">Italian</option>
+      <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+      <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+      <option value="Arabic">Arabic</option>
+      <option value="Hindi">Hindi</option>
+      <option value="Russian">Russian</option>
+      <option value="Turkish">Turkish</option>
+      <option value="Dutch">Dutch</option>
+      <option value="Polish">Polish</option>
+      <option value="Swedish">Swedish</option>
+      <option value="Vietnamese">Vietnamese</option>
+      <option value="Thai">Thai</option>
+      <option value="Indonesian">Indonesian</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <div class="toggle-row">
+      <span>Auto-translate pages when a country is active</span>
+      <input type="checkbox" id="auto-translate" />
+    </div>
+  </div>
+
+  <button class="save-btn" id="save">Save Settings</button>
+  <span class="saved-msg" id="saved-msg">Saved!</span>
+
+  <script src="options.js"></script>
+</body>
+</html>
