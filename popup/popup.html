@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Passport</title>
+  <link rel="stylesheet" href="popup.css" />
+  <style>
+    #gateSection { padding: 20px 16px 16px; }
+    .gate-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .gate-icon { font-size: 28px; }
+    .gate-title { font-size: 15px; font-weight: 700; }
+    .gate-subtitle { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .gate-plans { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+    .plan-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; border: 1px solid #2a2a3e; border-radius: 9px; padding: 10px 14px; background: #1a1a2e; color: #f0f0f0; font-size: 13px; cursor: pointer; text-align: left; }
+    .plan-btn:hover { border-color: #6366f1; }
+    .plan-btn .plan-name { font-weight: 600; }
+    .plan-btn .plan-price { color: #aaa; font-size: 12px; }
+    .gate-status { font-size: 11.5px; color: #818cf8; margin-top: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <!-- Gate: shown when not subscribed -->
+  <div id="gateSection" style="display:none">
+    <div class="gate-header">
+      <div class="gate-icon">🛂</div>
+      <div>
+        <div class="gate-title">Passport</div>
+        <div class="gate-subtitle">Subscribe to browse from any country</div>
+      </div>
+    </div>
+    <div class="gate-plans">
+      <button class="plan-btn" id="buyLiteBtn">
+        <span class="plan-name">Lite</span>
+        <span class="plan-price">$4.99 / mo</span>
+      </button>
+      <button class="plan-btn" id="buyExplorerBtn">
+        <span class="plan-name">Explorer</span>
+        <span class="plan-price">$12.99 / mo</span>
+      </button>
+      <button class="plan-btn" id="buyProBtn">
+        <span class="plan-name">Pro</span>
+        <span class="plan-price">$34.99 / mo</span>
+      </button>
+    </div>
+    <div class="gate-status" id="gateStatus"></div>
+  </div>
+
+  <!-- Main UI: shown when subscribed -->
+  <div id="mainSection" style="display:none">
+    <div class="header">
+      <span class="logo">🛂 Passport</span>
+      <span id="status-badge" class="badge badge-off">Off</span>
+    </div>
+    <div id="active-country" class="active-country hidden">
+      <span id="active-flag"></span>
+      <span id="active-name"></span>
+      <button id="disconnect-btn" class="btn-disconnect">Disconnect</button>
+    </div>
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Search country…" autocomplete="off" />
+    </div>
+    <ul id="country-list" class="country-list"></ul>
+    <div class="footer">
+      <label class="toggle-row">
+        <span>Auto-translate pages</span>
+        <input type="checkbox" id="auto-translate" />
+      </label>
+      <a href="#" id="open-options">Settings</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
